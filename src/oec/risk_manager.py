@@ -2,7 +2,7 @@ from .main import TradingContext
 
 
 def define_risk_amount(ctx: TradingContext) -> float:
-    return ctx.risk_pct * ctx.account_size
+    return ctx.risk_pct * ctx.account_value
 
 
 def define_take_profit_price(
