@@ -13,7 +13,7 @@ def get_option_contract_request(symbol) -> GetOptionContractsRequest:
 
 
 def get_symbol_from_input(input) -> str:
-    return input.split()[1]
+    return input.split()[1].upper()
 
 
 def get_closest_strike(strikes: List[float], underlying_price: float) -> float:

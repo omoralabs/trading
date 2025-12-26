@@ -1,3 +1,5 @@
+import json
+
 from alpaca.data.models import Quote
 from alpaca.data.requests import StockLatestQuoteRequest
 from alpaca.trading.enums import OrderClass, OrderSide, OrderType, TimeInForce
@@ -44,6 +46,7 @@ def handle_order_entry(
 ):
     try:
         entry_price = get_latest_price(ctx, symbol, side)
+        print(f"Entry price is {entry_price}")
         validate_orders(side, entry_price, stop_loss_price)
         side = get_side_object(side)
         qty = set_qty(entry_price, stop_loss_price, ctx.risk_amount, is_options)
@@ -56,7 +59,11 @@ def handle_order_entry(
         )
         ctx.client.submit_order(order)
     except Exception as e:
-        print(f"Error submitting order: {e}")
+        try:
+            error_data = json.loads(str(e))
+            print(f"Error submitting order: {error_data['message']}")
+        except Exception:
+            print(f"Error submitting order: {e}")
 
 
 def create_bracket_order(
