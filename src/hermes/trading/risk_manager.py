@@ -2,9 +2,9 @@ from hermes.context import TradingContext
 
 
 def set_qty(
-    entry_price: float, stop_loss_price: float, risk_amount: float, symbol: str
+    entry_price: float, stop_loss_price: float, risk_amount: float, is_options: bool
 ):
-    if len(symbol) >= 6:
+    if is_options:  # then it's options
         return round((risk_amount / abs(entry_price - stop_loss_price)) / 100)
     else:
         return round(risk_amount / abs(entry_price - stop_loss_price))

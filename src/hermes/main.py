@@ -54,6 +54,7 @@ async def main(ctx):
                         side="buy",
                         stop_loss_price=stop_price,
                         symbol=option_symbol,
+                        is_options=True,
                     )
                 else:
                     print("No option symbol found")
@@ -66,7 +67,7 @@ async def main(ctx):
                 print("Side must be buy or sell")
                 continue
             stop_loss_price = float(stop_loss)
-            handle_order_entry(ctx, side, stop_loss_price, symbol)
+            handle_order_entry(ctx, side, stop_loss_price, symbol, is_options=False)
 
 
 def cli():

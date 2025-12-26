@@ -1,4 +1,4 @@
-from oec.risk_manager import define_price_delta
+from hermes.trading.risk_manager import define_price_delta
 
 
 def test_define_price_delta_long():
