@@ -6,6 +6,7 @@ from alpaca.trading.requests import GetOrdersRequest
 from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.shortcuts import PromptSession
 
+from trading_analytics.processes.log_account_info import log_account_info
 from trading_order_entries.options.main import parsing_options
 from trading_order_entries.session.alpaca import start_stream
 from trading_order_entries.session.main import get_trading_context
@@ -124,6 +125,7 @@ async def main(ctx):
 
 def cli():
     ctx = get_trading_context()
+    log_account_info(ctx)
     asyncio.run(main(ctx))
 
 

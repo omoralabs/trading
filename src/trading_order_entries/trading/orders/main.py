@@ -2,8 +2,10 @@ import json
 
 from alpaca.trading.enums import TimeInForce
 
+from trading_analytics.processes.log_executions import (
+    handle_inserting_stop_orders,
+)
 from trading_order_entries.context import TradingContext
-from trading_order_entries.db.utils import handle_inserting_stop_orders
 from trading_order_entries.trading.orders.orders import (
     create_entry_order,
     create_limit_order,
@@ -29,6 +31,7 @@ def handle_exit_orders_commons(
     qty: int,
     stop_loss_price: float,
     take_profit_price: float,
+    trade_id,
 ) -> None:
     qty_partial_fills, remaining_qty = get_qty_split(qty)
     side = get_exit_side_object(side)
@@ -43,7 +46,9 @@ def handle_exit_orders_commons(
     ctx.client.submit_order(order_partial_fills_one)
     ctx.client.submit_order(order_remaining_stop)
 
-    handle_inserting_stop_orders(ctx, order_remaining_stop)
+    handle_inserting_stop_orders(
+        ctx, order_remaining_stop, trade_id
+    )  # can ignore error raw_data is set as False in initiation
 
 
 def handle_exit_orders_options(
@@ -53,6 +58,7 @@ def handle_exit_orders_options(
     qty: int,
     stop_loss_price: float,
     take_profit_price: float,
+    trade_id: int,
 ) -> None:
     side = get_exit_side_object(side)
 
@@ -65,7 +71,7 @@ def handle_exit_orders_options(
     order_stop_submitted = ctx.client.submit_order(order_stop)
 
     handle_inserting_stop_orders(
-        ctx, order_stop_submitted
+        ctx, order_stop_submitted, trade_id
     )  # can ignore error raw_data is set as False in initiation
 
 
@@ -77,14 +83,15 @@ def handle_exit_orders(
     stop_loss_price: float,
     take_profit_price: float,
     is_options: bool,
+    trade_id: int,
 ):
     if is_options:
         handle_exit_orders_options(
-            ctx, side, symbol, qty, stop_loss_price, take_profit_price
+            ctx, side, symbol, qty, stop_loss_price, take_profit_price, trade_id
         )
     else:
         handle_exit_orders_commons(
-            ctx, side, symbol, qty, stop_loss_price, take_profit_price
+            ctx, side, symbol, qty, stop_loss_price, take_profit_price, trade_id
         )
 
 
@@ -109,6 +116,7 @@ def handle_order_entry(
         )
 
         order = create_entry_order(symbol, qty, side, limit_price, is_options)
+
         response = ctx.client.submit_order(order)
 
         ctx.pending_orders[response.id] = {

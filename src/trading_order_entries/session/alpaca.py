@@ -1,3 +1,4 @@
+import asyncio
 import os
 from typing import Tuple
 
@@ -7,8 +8,11 @@ from alpaca.trading.enums import PositionIntent
 from alpaca.trading.stream import TradingStream
 from dotenv import load_dotenv
 
+from trading_analytics.processes.log_executions import inserting_entry_orders, inserting_closing_orders
 from trading_order_entries.context import TradingContext
 from trading_order_entries.trading.orders.main import handle_exit_orders
+
+order_locks = {}
 
 
 def _get_api_keys(is_paper) -> Tuple:
@@ -41,21 +45,22 @@ def get_account_value(client: TradingClient) -> Tuple:
     account = client.get_account()
     account_value = float(account.last_equity or 0)
     account_currency = account.currency
+    account_nr = account.account_number
 
     print(
         f"Account value for risk calculations today is {account_currency} {account_value:,.2f}"
     )
 
-    return account_value, account_currency
+    return account_value, account_currency, account_nr
 
 
 async def start_stream(ctx: TradingContext) -> None:
     api_key, secret_key = _get_api_keys(ctx.is_paper)
-
     trading_stream = TradingStream(api_key, secret_key, paper=ctx.is_paper)
 
     async def update_handler(data):
         order = data.order
+
         print(f"\n Order Update: {data.event.upper()}")
         print(
             f"   Symbol: {order.symbol} | Side: {order.side.value} | Type: {order.type.value}"
@@ -75,8 +80,14 @@ async def start_stream(ctx: TradingContext) -> None:
                 PositionIntent.SELL_TO_OPEN,
             ]:
                 pending = ctx.pending_orders[order.id]
-                print("Position opened! Submitting exit orders...")
+                lock = order_locks.setdefault(order.id, asyncio.Lock())
+                print("Position opened!")
 
+                async with lock:
+                    print("Logging executions...")
+                    trade_id = inserting_entry_orders(ctx, order)
+
+                print("Creating exit orders...")
                 handle_exit_orders(
                     ctx,
                     side=pending["side"],
@@ -85,9 +96,13 @@ async def start_stream(ctx: TradingContext) -> None:
                     stop_loss_price=pending["stop_loss_price"],
                     take_profit_price=pending["take_profit_price"],
                     is_options=pending["is_options"],
+                    trade_id=trade_id,
                 )
 
                 del ctx.pending_orders[order.id]
+
+            else: # it's buy or sell to close:
+
 
         print()  # Add blank line after update
 

@@ -4,7 +4,7 @@ from typing import Dict
 from alpaca.data.historical import OptionHistoricalDataClient, StockHistoricalDataClient
 from alpaca.trading.client import TradingClient
 
-from trading_order_entries.db.db import DuckDBConnector
+from trading_analytics.db.db import DuckDBConnector
 
 
 @dataclass
@@ -13,9 +13,9 @@ class TradingContext:
     stock_data: StockHistoricalDataClient
     option_data: OptionHistoricalDataClient
     db: DuckDBConnector
-    account_id: int
     risk_pct: float
     is_paper: bool
+    account_id: int
     account_value: float
     account_currency: str
     risk_reward: float
