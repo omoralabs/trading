@@ -12,7 +12,7 @@ def to_df(tickers: list[str], event_type: str = "add") -> pl.DataFrame:
 
 
 def main():
-    data = json.load(open("src/trading_analytics/processes/watchlist.json"))
+    data = json.load(open("processes/watchlist.json"))
     pets = data["pets"]
     gappers = data["gappers"]
     with DuckDBConnector() as db:

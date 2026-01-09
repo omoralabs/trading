@@ -1,25 +1,29 @@
 {{ config (materialized='view') }}
 
-with trades as (
-    select * from {{source('stocksdb', 'trades')}}
+with entry_executions as (
+    select * from {{ref('entry_executions')}}
+    ),
+
+exit_executions as (
+    select * from {{ref('exit_executions')}}
 ),
 
-executions as (
-    select * from {{source('stocksdb', 'executions')}}
+stop_orders as (
+    select * from {{source('stocksdb', 'stop_orders')}}
 )
 
-
 select
-    t.trade_id,
-    e.execution_id,
-    e.symbol,
-    e.side,
-    e.position_intent,
-    e.filled_at,
-    e.filled_qty,
-    e.filled_avg_price,
-    e.account_id,
-    row_number() over (partition by t.trade_id order by e.id) as execution_order,
-    row_number() over (partition by t.trade_id order by e.id desc) as execution_order_desc
-from trades t
-join executions e on t.id = e.id
+    entre.trade_id,
+    entre.symbol,
+    entre.side,
+    entre.filled_at as date_opened,
+    entre.filled_qty as entry_qty,
+    entre.filled_avg_price as entry_price,
+    so.stop_price,
+    exite.filled_qty as exit_qty,
+    exite.filled_avg_price as exit_price,
+    exite.filled_at as date_closed,
+    entre.account_id
+from entry_executions entre
+left join exit_executions exite on exite.trade_id = entre.trade_id
+left join stop_orders so on so.trade_id = entre.trade_id

@@ -1,12 +1,16 @@
-{{ config(materialized='view') }}
+{{ config (materialized='view') }}
 
-with trade_executions as(
-    select * from {{ ref ('trade_executions') }}
+with executions as (
+    select * from {{source('stocksdb', 'executions')}}
 )
 
 select
     trade_id,
-    sum(filled_qty * filled_avg_price) / sum(filled_qty) as avg_exit_price
-from trade_executions
-where position_intent in('buy_to_close', 'sell_to_close')
-group by trade_id
+    max(filled_at) as filled_at,
+    sum(filled_avg_price * filled_qty) / sum(filled_qty) as filled_avg_price,
+    sum(filled_qty) as filled_qty,
+    symbol,
+    account_id
+from executions
+where position_intent like '%_to_close'
+group by trade_id, symbol, side, account_id

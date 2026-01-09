@@ -1,6 +1,6 @@
 {{config (materialised='view')}}
 
-with weekly_performance as (
+with monthly_performance as (
     select * from {{ref('monthly_performance')}}
 )
 
